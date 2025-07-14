@@ -1,5 +1,4 @@
-# scripts/run_online.py
-
+#!/usr/bin/env python3
 import os
 import sys
 import argparse
@@ -15,6 +14,7 @@ sys.path.insert(0, os.path.join(top, "src"))
 
 from features import FeatureExtractor
 from matcher import Matcher
+from data_collection import GridDataCollector
 from pose_estimation import PoseEstimator
 from online_calibrator import OnlineCalibrator
 from scripts.result_saver import save_results
@@ -50,11 +50,11 @@ def main():
     args = parse_args()
     cfg = yaml.safe_load(open(args.config, "r"))
 
-    # select loader + calibration
+    # --- loader & calib selection ---
     if args.dataset == "stereo":
         from stereo_data_loader import KITTI_StereoLoader as Loader
         loader = Loader(split=args.split, config_path=args.config)
-        calib = loader.calib
+        calib  = loader.calib
         base_out = os.path.join("outputs", "online", "stereo_results")
         seq = args.split
 
@@ -67,22 +67,34 @@ def main():
             calib_dir=vo_cfg["calib_dir"],
             cam=vo_cfg["cam"],
         )
-        calib = {"K0": loader.K0, "K1": loader.K1, "R": loader.R, "t": loader.t}
+        calib = {
+            "K0": loader.K0,
+            "K1": loader.K1,
+            "R":  loader.R,
+            "t":  loader.t
+        }
         base_out = os.path.join("outputs", "online", "vo_results")
         seq = vo_cfg["sequence"]
 
-    else:  # cb
+    else:
         from cb_data_loader import CheckerBoardLoader as Loader
         loader = Loader(base_dir="data_cb")
-        calib = loader.calib
+        calib  = loader.calib
         base_out = os.path.join("outputs", "online", "cb_results")
         seq = "cb"
 
-    # initialize pipeline
-    FE = FeatureExtractor(config_path=args.config)
-    M = Matcher(config_path=args.config)
-    PE = PoseEstimator(config_path=args.config)
-    EKF = OnlineCalibrator(config_path=args.config)
+    # --- initialize pipeline ---
+    FE    = FeatureExtractor(config_path=args.config)
+    M     = Matcher(config_path=args.config)
+    PE    = PoseEstimator(config_path=args.config)
+    EKF   = OnlineCalibrator(config_path=args.config)
+
+    # Prepare grid collector parameters from config
+    coll_cfg = cfg.get("collection", {})
+    grid_rows    = coll_cfg.get("grid_rows", 8)
+    grid_cols    = coll_cfg.get("grid_cols", 16)
+    max_per_cell = coll_cfg.get("max_per_cell", 200)
+    collector    = None  # will init on first frame once we know img size
 
     # prepare output dirs
     os.makedirs(base_out, exist_ok=True)
@@ -110,90 +122,107 @@ def main():
     prev_R = None
     prev_t = None
 
-    # processing loop
+    # --- processing loop ---
     for idx_raw, img0, img1 in loader.image_pairs():
         # parse frame id
-        if isinstance(idx_raw, str) and idx_raw.isdigit():
-            idx = int(idx_raw)
-        else:
-            idx = idx_raw
+        idx = int(idx_raw) if isinstance(idx_raw, str) and idx_raw.isdigit() else idx_raw
 
-        # feature + match
+        # init collector once we know image size
+        if collector is None:
+            h, w = img0.shape[:2]
+            collector = GridDataCollector(
+                img_shape=(h, w),
+                grid_rows=grid_rows,
+                grid_cols=grid_cols,
+                N_max=max_per_cell
+            )
+
+        # 1) feature extraction
         kp0, des0 = FE.detect_and_compute(img0)
         kp1, des1 = FE.detect_and_compute(img1)
+
+        # 2) matching
         matches = M.match(kp0, kp1, des0, des1)
 
-        # pose estimation + smoothing
+        # 3) grid-based filtering
+        matches = collector.collect(kp0, kp1, matches)
+
+        # 4) pose estimation + smoothing
         Rk, tk, mask = PE.estimate(kp0, kp1, matches, calib)
         R_filt, t_filt = EKF.update(Rk, tk)
 
-        # absolute errors
+        # --- compute absolute errors ---
         gt_R_abs, gt_t_abs = calib["R"], calib["t"]
         abs_trans_err = np.linalg.norm(gt_t_abs - t_filt)
         Rdiff = gt_R_abs.T @ R_filt
         ang = np.clip((np.trace(Rdiff) - 1) / 2, -1.0, 1.0)
         abs_rot_err = np.degrees(np.arccos(ang))
 
-        # relative errors
+        # --- compute relative errors ---
         if prev_R is not None:
             est_Rrel = prev_R.T @ R_filt
             est_trel = prev_R.T @ (t_filt - prev_t)
         else:
             est_Rrel = np.eye(3)
-            est_trel = np.zeros((3, 1))
+            est_trel = np.zeros((3,1))
 
         if args.dataset == "vo":
-            # use GT VO poses for relative error
             if isinstance(idx, int) and idx > 0:
                 gt_R_prev, gt_t_prev = loader.gt_poses[idx - 1]
             else:
                 gt_R_prev, gt_t_prev = gt_R_abs, gt_t_abs
-            gt_Rrel = gt_R_prev.T @ loader.gt_poses[idx][0]
-            gt_trel = gt_R_prev.T @ (loader.gt_poses[idx][1] - gt_t_prev)
+            gt_next = loader.gt_poses[idx]
+            gt_Rrel = gt_R_prev.T @ gt_next[0]
+            gt_trel = gt_R_prev.T @ (gt_next[1] - gt_t_prev)
         else:
-            # stereo & cb: static extrinsic
             gt_Rrel = np.eye(3)
-            gt_trel = np.zeros((3, 1))
+            gt_trel = np.zeros((3,1))
 
         rel_trans_err = np.linalg.norm(gt_trel - est_trel)
         Rdiff_rel = gt_Rrel.T @ est_Rrel
         angr = np.clip((np.trace(Rdiff_rel) - 1) / 2, -1.0, 1.0)
         rel_rot_err = np.degrees(np.arccos(angr))
 
-        # write CSV
+        # ── OUTLIER REJECTION ON LARGE ROTATION JUMPS ──
+        MAX_ROT_JUMP_DEG = 3.0
+        if abs_rot_err > MAX_ROT_JUMP_DEG:
+            print(f"[frame {idx}] rejecting large rotation jump: {abs_rot_err:.1f}°")
+            continue
+
+        # --- write CSV (only for accepted frames) ---
         writer.writerow([
             idx,
-            t_filt[0, 0], t_filt[1, 0], t_filt[2, 0],
-            gt_t_abs[0, 0], gt_t_abs[1, 0], gt_t_abs[2, 0],
+            t_filt[0,0], t_filt[1,0], t_filt[2,0],
+            gt_t_abs[0,0], gt_t_abs[1,0], gt_t_abs[2,0],
             abs_trans_err, abs_rot_err,
-            est_trel[0, 0], est_trel[1, 0], est_trel[2, 0],
-            gt_trel[0, 0], gt_trel[1, 0], gt_trel[2, 0],
+            est_trel[0,0], est_trel[1,0], est_trel[2,0],
+            gt_trel[0,0], gt_trel[1,0], gt_trel[2,0],
             rel_trans_err, rel_rot_err,
         ])
 
-        # display matches
+        # --- visualization (only for accepted frames) ---
         inliers = [m for i, m in enumerate(matches) if mask[i]]
         vis = cv2.drawMatches(
             img0, kp0, img1, kp1, inliers, None,
             flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS
         )
         cv2.putText(vis, f"abs_err={abs_trans_err:.2f}m rot={abs_rot_err:.1f}°",
-                    (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                    (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
         cv2.putText(vis, f"rel_err={rel_trans_err:.2f}m rot={rel_rot_err:.1f}°",
-                    (10, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                    (10, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
         cv2.imshow("Matches",
                    cv2.resize(vis, None, fx=0.5, fy=0.5,
                               interpolation=cv2.INTER_AREA))
-        if cv2.waitKey(int(args.delay * 1000)) & 0xFF == ord("q"):
+        if cv2.waitKey(int(args.delay*1000)) & 0xFF == ord("q"):
             break
 
+        # ── integrate into trajectory ──
         prev_R, prev_t = R_filt, t_filt
 
-    # cleanup
+    # cleanup & postprocess
     cf.close()
     cv2.destroyAllWindows()
 
-    # post-process: tables & graphs
     df = pd.read_csv(csv_path)
     save_results(df, base_out, args.dataset, seq)
 

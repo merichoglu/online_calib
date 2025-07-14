@@ -23,8 +23,17 @@ matcher:
 # RANSAC / pose
 ransac:
   prob: 0.999
-  thresh: 1.0
+  thresh: 0.6
 
 # smoothing for EKF
 smoothing:
   alpha: 0.1  # between 0 (no updates) and 1 (no smoothing)
+
+# --------------------------------------
+# grid-based match collection
+collection:
+  # how many rows/cols to split the image into
+  grid_rows:    8
+  grid_cols:   16
+  # maximum matches to keep per cell before scaling by rho
+  max_per_cell: 200
