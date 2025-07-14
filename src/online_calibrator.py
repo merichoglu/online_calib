@@ -1,3 +1,5 @@
+# src/online_calibrator.py
+
 import numpy as np
 import yaml
 from scipy.spatial.transform import Rotation, Slerp
