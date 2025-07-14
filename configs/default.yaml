@@ -18,11 +18,12 @@ feature:
 # matcher params
 matcher:
   ratio_test: 0.75
+  max_row_diff: 8
 
 # RANSAC / pose
 ransac:
   prob: 0.999
-  thresh: 2
+  thresh: 1.0
 
 # smoothing for EKF
 smoothing:

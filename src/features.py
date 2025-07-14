@@ -13,6 +13,7 @@ class FeatureExtractor:
             self.det = cv2.SIFT_create(nfeatures=n)
         else:
             raise ValueError(f"Unknown feature type {tp}")
+        print(f"FeatureExtractor initialized with {tp} and n_features={n}")
 
     def detect_and_compute(self, img):
         """Returns keypoints, descriptors."""

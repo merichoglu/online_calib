@@ -1,3 +1,5 @@
+# scripts/run_online.py
+
 import os
 import sys
 import argparse
@@ -7,6 +9,7 @@ import numpy as np
 import csv
 import pandas as pd
 
+# ensure src is on path
 top = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.join(top, "src"))
 
@@ -126,7 +129,9 @@ def main():
 
         kp0, des0 = FE.detect_and_compute(img0)
         kp1, des1 = FE.detect_and_compute(img1)
-        matches = M.match(des0, des1)
+        # inject epipolar constraint: pass keypoints to matcher
+        matches = M.match(kp0, kp1, des0, des1)
+
         Rk, tk, mask = PE.estimate(kp0, kp1, matches, calib)
         R_filt, t_filt = EKF.update(Rk, tk)
 

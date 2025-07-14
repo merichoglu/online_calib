@@ -9,6 +9,7 @@ class OnlineCalibrator:
         self.alpha = cfg.get("smoothing", {}).get("alpha", 0.1)
         self.R_prev = None
         self.t_prev = None
+        print(f"OnlineCalibrator initialized with alpha={self.alpha}")
 
     def update(self, R_meas, t_meas):
         """

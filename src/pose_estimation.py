@@ -9,6 +9,7 @@ class PoseEstimator:
         ransac_cfg = cfg["ransac"]
         self.prob = ransac_cfg["prob"]
         self.thresh = ransac_cfg["thresh"]
+        print(f"PoseEstimator initialized with prob={self.prob}, thresh={self.thresh}")
 
     def estimate(self, kp0, kp1, matches, calib):
         """

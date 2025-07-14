@@ -96,6 +96,8 @@ class KITTI_StereoLoader:
         self.map0_x = self.map0_y = None
         self.map1_x = self.map1_y = None
 
+        print(f"KITTI Stereo Loader initialized for {split} split, cam {cam}")
+
     def _init_rectify_maps(self, image_size):
         """
         Build undistort + rectify maps using intrinsics, distortion, rectification, and projection.

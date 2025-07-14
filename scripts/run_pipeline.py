@@ -65,7 +65,8 @@ def main():
         # 1) Feature extraction and matching
         kp0, des0 = FE.detect_and_compute(img0)
         kp1, des1 = FE.detect_and_compute(img1)
-        matches = M.match(des0, des1)
+        # inject epipolar constraint: pass keypoints to matcher
+        matches = M.match(kp0, kp1, des0, des1)
         num_total = len(matches)
 
         # 2) Pose estimation (unit-norm translation scaled internally)
