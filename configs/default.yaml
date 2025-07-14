@@ -1,0 +1,29 @@
+# paths
+data_stereo:
+  raw_dir: ../data_stereo/raw
+  proc_dir: ../data_stereo/processed
+
+data_vo:
+  # both images and calib live under the same root folder
+  base_dir: data_vo/dataset
+  calib_dir: data_vo/dataset
+  sequence: '01'
+  cam: 0
+
+# feature params
+feature:
+  type: ORB
+  n_features: 2000
+
+# matcher params
+matcher:
+  ratio_test: 0.75
+
+# RANSAC / pose
+ransac:
+  prob: 0.999
+  thresh: 2
+
+# smoothing for EKF
+smoothing:
+  alpha: 0.1  # between 0 (no updates) and 1 (no smoothing)

@@ -1,0 +1,17 @@
+# core
+numpy>=1.21
+scipy>=1.8
+pyyaml>=6.0
+
+# image I/O & processing
+opencv-python>=4.5
+scikit-image>=0.20
+Pillow>=9.0
+matplotlib>=3.4
+
+# deep learning
+torch>=2.0.0
+torchvision>=0.15.0
+
+# convenience
+tqdm>=4.64
