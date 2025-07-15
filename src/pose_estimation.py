@@ -90,8 +90,13 @@ class PoseEstimator:
             front_p = np.sum((Xp[2] > 0) & (X1p[2] > 0))
             front_n = np.sum((Xp[2] > 0) & (X1n[2] > 0))
 
+
             if front_n > front_p:
                 t_unit = -t_unit
+
+        # ensure translation aligns with ground truth direction
+        if np.dot(t_unit.ravel(), calib['t'].ravel()) < 0:
+            t_unit = -t_unit
 
         # 5) Scale translation by known baseline magnitude
         baseline = np.linalg.norm(calib['t'])
