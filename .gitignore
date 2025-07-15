@@ -3,3 +3,5 @@ data_vo/
 data_stereo/
 data_cb/
 venv/
+scripts/__pycache__
+src/__pycache__
