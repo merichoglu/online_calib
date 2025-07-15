@@ -24,18 +24,35 @@ class PoseEstimator:
         pts0 = np.float32([kp0[m.queryIdx].pt for m in matches])
         pts1 = np.float32([kp1[m.trainIdx].pt for m in matches])
 
+        # Not enough correspondences to estimate pose
+        if len(matches) < 5:
+            return (
+                np.eye(3),
+                np.zeros((3, 1)),
+                np.zeros(len(matches), dtype=bool),
+            )
+
         # Ensure arrays are contiguous for OpenCV C API
         pts0 = np.ascontiguousarray(pts0)
         pts1 = np.ascontiguousarray(pts1)
 
         # 2) Estimate essential matrix via RANSAC
         E, mask = cv2.findEssentialMat(
-            pts0, pts1,
-            calib['K0'],
+            pts0,
+            pts1,
+            calib["K0"],
             method=cv2.RANSAC,
             prob=self.prob,
-            threshold=self.thresh
+            threshold=self.thresh,
         )
+
+        # Handle failure of essential matrix estimation
+        if E is None or mask is None:
+            return (
+                np.eye(3),
+                np.zeros((3, 1)),
+                np.zeros(len(matches), dtype=bool),
+            )
 
         # Prepare mask for recoverPose: uint8 & contiguous
         mask = mask.astype(np.uint8)
