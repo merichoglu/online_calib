@@ -157,8 +157,8 @@ def main():
 
         rel_trans_err = np.linalg.norm(gt_trel - est_trel)
         Rdiff_rel = gt_Rrel.T @ est_Rrel
-        angr = np.clip((np.trace(Rdiff_rel) - 1) / 2, -1.0, 1.0)
-        rel_rot_err = np.degrees(np.arccos(angr))
+        ang_rel = np.clip((np.trace(Rdiff_rel) - 1) / 2, -1.0, 1.0)
+        rel_rot_err = np.degrees(np.arccos(ang_rel))
 
         # write CSV
         writer.writerow([

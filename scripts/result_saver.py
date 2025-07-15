@@ -15,7 +15,7 @@ def save_results(
     Args:
         results_df: DataFrame with columns ['frame', 'abs_trans_err', 'abs_rot_err_deg', 'rel_trans_err', 'rel_rot_err_deg', ...]
         out_dir: Root output directory (e.g. outputs/online/stereo_results)
-        dataset: 'stereo' or 'vo'
+        dataset: 'stereo', 'vo' or 'cb'
         seq: sequence identifier (split or sequence number)
     """
     tables_dir = os.path.join(out_dir, "tables")
