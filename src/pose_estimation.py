@@ -33,12 +33,27 @@ class PoseEstimator:
                 np.zeros(len(matches), dtype=bool),
             )
 
-        # Ensure arrays are contiguous for OpenCV C API
         pts0 = np.ascontiguousarray(pts0)
         pts1 = np.ascontiguousarray(pts1)
 
-        # 2) Estimate essential matrix via USAC_MAGSAC RANSAC
-        E, mask = cv2.findEssentialMat(
+        # 2a) Preliminary Essential via eight-point RANSAC
+        E8, mask8 = cv2.findEssentialMat(
+            pts0,
+            pts1,
+            calib["K0"],
+            None,
+            calib["K0"],
+            None,
+            method=cv2.RANSAC,
+            prob=self.prob,
+            threshold=self.thresh,
+        )
+        inliers8 = 0
+        if mask8 is not None:
+            inliers8 = int(mask8.ravel().astype(bool).sum())
+
+        # 2b) Robust Essential via USAC_MAGSAC
+        E, mask_usac = cv2.findEssentialMat(
             pts0,
             pts1,
             calib["K0"],
@@ -49,49 +64,48 @@ class PoseEstimator:
             prob=self.prob,
             threshold=self.thresh,
         )
+        if E is None or mask_usac is None:
+            # fallback on eight-point if USAC fails
+            E = E8
+            mask_usac = mask8 if mask8 is not None else np.zeros((len(matches),1), dtype=np.uint8)
+        mask_usac = mask_usac.astype(np.uint8)
+        mask_usac = np.ascontiguousarray(mask_usac)
+        inliers_usac = int(mask_usac.ravel().astype(bool).sum())
 
-        # Handle failure of essential matrix estimation
-        if E is None or mask is None:
-            return (
-                np.eye(3),
-                np.zeros((3, 1)),
-                np.zeros(len(matches), dtype=bool),
-            )
+        # 2c) Choose the better initialization
+        if inliers8 > inliers_usac:
+            E_final = E8
+            mask_final = mask8.astype(np.uint8)
+        else:
+            E_final = E
+            mask_final = mask_usac
 
-        # Prepare mask for recoverPose: uint8 & contiguous
-        mask = mask.astype(np.uint8)
-        mask = np.ascontiguousarray(mask)
-
-        # 3) Recover pose: returns one of four possible (R,t) with unit-norm t
+        # 3) Recover pose from chosen E
         _, R_est, t_unit, mask2 = cv2.recoverPose(
-            E, pts0, pts1, cameraMatrix=calib["K0"], mask=mask
+            E_final, pts0, pts1, cameraMatrix=calib["K0"], mask=mask_final
         )
         mask_bool = mask2.ravel().astype(bool)
 
         # 4) Disambiguate translation sign via cheirality check
         K = calib["K0"]
         P0 = K @ np.hstack((np.eye(3), np.zeros((3, 1))))
-
         inlier_idxs = np.where(mask_bool)[0]
         if len(inlier_idxs) > 0:
             sel = inlier_idxs[: min(20, len(inlier_idxs))]
-            pts0_s = pts0[sel].T  # 2xN
-            pts1_s = pts1[sel].T  # 2xN
+            pts0_s = pts0[sel].T
+            pts1_s = pts1[sel].T
 
             P1_pos = K @ np.hstack((R_est, t_unit))
             P1_neg = K @ np.hstack((R_est, -t_unit))
-
             Xp = cv2.triangulatePoints(P0, P1_pos, pts0_s, pts1_s)
             Xn = cv2.triangulatePoints(P0, P1_neg, pts0_s, pts1_s)
             Xp = Xp[:3] / Xp[3]
             Xn = Xn[:3] / Xn[3]
-
             X1p = R_est @ Xp + t_unit
             X1n = R_est @ Xn - t_unit
 
             front_p = np.sum((Xp[2] > 0) & (X1p[2] > 0))
             front_n = np.sum((Xp[2] > 0) & (X1n[2] > 0))
-
             if front_n > front_p:
                 t_unit = -t_unit
 
