@@ -13,21 +13,23 @@ data_vo:
 # feature params
 feature:
   type: ORB
-  n_features: 1000
+  n_features: 2000
 
 # matcher params
 matcher:
-  ratio_test: 0.65
+  ratio_test: 0.75
   max_row_diff: 2
 
 # RANSAC / pose
 ransac:
   prob: 0.999
-  thresh: 1.0
+  thresh: 0.5
 
 # smoothing for EKF
 smoothing:
-  alpha: 0.1  # between 0 (no updates) and 1 (no smoothing)
+  alpha: 0.10  # between 0 (no updates) and 1 (no smoothing)
+  rot_thresh_deg: 5.0
+  warmup_frames: 15 # number of frames to collect before filtering
 
 # --------------------------------------
 # grid-based match collection
@@ -37,3 +39,6 @@ collection:
   grid_cols:   16
   # maximum matches to keep per cell before scaling by rho
   max_per_cell: 200
+
+gnc:
+  max_iters: 20
