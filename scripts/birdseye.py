@@ -6,7 +6,6 @@ import cv2
 import numpy as np
 import argparse
 
-# ─── ensure src on path ───────────────────────────────────────────────────────
 proj_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.join(proj_root, "src"))
 
@@ -65,7 +64,7 @@ def main():
     loader = CheckerBoardLoader(base_dir=args.base_dir)
     K = loader.calib["K0"]
 
-    # compute the WORLD-CENTRE so that your boards sit in the middle of the canvas
+    # compute the WORLD-CENTRE
     pts = []
     for key, pose in loader._poses.items():
         if key.startswith("left_") or key.startswith("right_"):
@@ -74,13 +73,13 @@ def main():
     xs, ys = zip(*pts)
     mean_x, mean_y = float(np.mean(xs)), float(np.mean(ys))
 
-    # build our blank canvas (square)
+    # build blank canvas
     N = int(2 * args.size * args.scale)
     canvas = np.zeros((N, N), dtype=np.float64)
     count = np.zeros((N, N), dtype=np.uint16)
     cx = cy = N // 2
 
-    # a little CLAHE to boost contrast for the corner detector
+    # CLAHE to boost contrast for the corner detector
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
 
     total_warps = 0
@@ -115,7 +114,6 @@ def main():
 
             # 5) build the homography and the canvas→world transform
             H_plane = compute_homography(K, R_wc, t_wc)
-            # S maps canvas-pixels → world (meters), centred at (mean_x,mean_y)
             S = np.array(
                 [
                     [1 / args.scale, 0, mean_x - cx / args.scale],

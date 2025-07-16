@@ -4,6 +4,7 @@ import numpy as np
 import yaml
 from scipy.spatial.transform import Rotation, Slerp
 
+
 class OnlineCalibrator:
     def __init__(self, config_path="../configs/default.yaml"):
         # Load smoothing and threshold configuration
@@ -18,18 +19,20 @@ class OnlineCalibrator:
         self.warmup_frames = smoothing_cfg.get("warmup_frames", 10)
 
         # Buffers for the warmup phase
-        self.buffered_R = []      # list of scipy Rotation
-        self.buffered_t = []      # list of (3,) arrays
+        self.buffered_R = []  # list of scipy Rotation
+        self.buffered_t = []  # list of (3,) arrays
         self.frame_count = 0
         self.warmup_done = False
 
         # Filter state (to be set after warmup)
-        self.R_prev = None        # scipy Rotation
-        self.t_prev = None        # (3,) np array
+        self.R_prev = None  # scipy Rotation
+        self.t_prev = None  # (3,) np array
 
-        print(f"OnlineCalibrator initialized: "
-              f"alpha={self.alpha}, rot_thresh={self.rot_thresh}°, "
-              f"warmup_frames={self.warmup_frames}")
+        print(
+            f"OnlineCalibrator initialized: "
+            f"alpha={self.alpha}, rot_thresh={self.rot_thresh}°, "
+            f"warmup_frames={self.warmup_frames}"
+        )
 
     def update(self, R_meas, t_meas, inliers=None):
         """
@@ -51,7 +54,6 @@ class OnlineCalibrator:
                 return R_meas, t_meas
 
             # On the final warmup frame: compute batch‐average pose
-            # Translation average
             t_mean = np.mean(np.stack(self.buffered_t, axis=0), axis=0)
 
             # Rotation average via quaternions
@@ -84,14 +86,14 @@ class OnlineCalibrator:
             alpha_rot = self.alpha * (self.rot_thresh / angle_deg)
             alpha_rot = np.clip(alpha_rot, 0.0, self.alpha)
 
-        # Adapt weights based on inlier ratio
+        # Adapt weights based on inlier ratio, paper does it this way
         if inliers is not None and isinstance(inliers, (np.ndarray, list)):
             inliers_arr = np.array(inliers, dtype=bool)
             ratio = inliers_arr.sum() / max(1, inliers_arr.size)
             # scale rotation weight and translation weight
-            alpha_rot *= (ratio ** 2)
+            alpha_rot *= ratio**2
             alpha_rot = np.clip(alpha_rot, 0.0, self.alpha)
-            alpha_trans = self.alpha * (ratio ** 2)
+            alpha_trans = self.alpha * (ratio**2)
         else:
             alpha_trans = self.alpha
 

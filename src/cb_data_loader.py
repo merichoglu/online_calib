@@ -49,7 +49,7 @@ class CheckerBoardLoader:
     def __init__(self, base_dir):
         self.base_dir = base_dir
 
-        # 1) Hard-coded fisheye intrinsics & zero distortion:
+        # 1) Hard-coded fisheye intrinsics & zero distortion from the sample code:
         K = np.array(
             [
                 [550.0395, 0, 960],
@@ -71,7 +71,7 @@ class CheckerBoardLoader:
             K, D, np.eye(3), newK, (width, height), cv2.CV_16SC2
         )
 
-        # 3) Parse your JSON extrinsics (one entry per left_i / right_i)
+        # 3) Parse JSON extrinsics (one entry per left_i / right_i)
         pose_file = os.path.join(base_dir, "Position.json")
         with open(pose_file, "r") as fh:
             self._poses = json.load(fh)

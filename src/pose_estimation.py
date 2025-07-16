@@ -16,7 +16,6 @@ def certify_essential(E_local, X0, X1, eps=1e-6):
     Returns:
       is_certified (bool), dual_gap (float)
     """
-    # Vectorize local E and form augmented vector v = [e; 1]
     e_vec = E_local.flatten()
     v_local = np.hstack([e_vec, 1.0])  # length 10
 
@@ -30,7 +29,7 @@ def certify_essential(E_local, X0, X1, eps=1e-6):
     for i in range(N):
         u0, v0 = x0[i]
         u1, v1 = x1[i]
-        A[i] = [u1*u0, u1*v0, u1, v1*u0, v1*v0, v1, u0, v0, 1]
+        A[i] = [u1 * u0, u1 * v0, u1, v1 * u0, v1 * v0, v1, u0, v0, 1]
     C = A.T @ A  # 9×9
 
     # Build block-diagonal Cblock = [[C, 0]; [0, 0]] (10×10)
@@ -76,16 +75,24 @@ class PoseEstimator:
 
         # 2) Eight-point RANSAC for init
         E8, mask8 = cv2.findEssentialMat(
-            pts0, pts1, calib["K0"], None, calib["K0"], None,
-            method=cv2.RANSAC, prob=self.prob, threshold=self.thresh)
+            pts0,
+            pts1,
+            calib["K0"],
+            None,
+            calib["K0"],
+            None,
+            method=cv2.RANSAC,
+            prob=self.prob,
+            threshold=self.thresh,
+        )
         if E8 is None or mask8 is None:
-            return np.eye(3), np.zeros((3,1)), np.zeros(len(matches), dtype=bool)
+            return np.eye(3), np.zeros((3, 1)), np.zeros(len(matches), dtype=bool)
         mask8 = mask8.ravel().astype(bool)
 
         # 3) Normalize points
         K = calib["K0"]
-        x0 = cv2.undistortPoints(pts0.reshape(-1,1,2), K, None).reshape(-1,2)
-        x1 = cv2.undistortPoints(pts1.reshape(-1,1,2), K, None).reshape(-1,2)
+        x0 = cv2.undistortPoints(pts0.reshape(-1, 1, 2), K, None).reshape(-1, 2)
+        x1 = cv2.undistortPoints(pts1.reshape(-1, 1, 2), K, None).reshape(-1, 2)
         X0 = np.vstack([x0.T, np.ones((1, x0.shape[0]))])
         X1 = np.vstack([x1.T, np.ones((1, x1.shape[0]))])
 
@@ -96,23 +103,24 @@ class PoseEstimator:
             num = np.sum(X1 * Ex, axis=0)
             den = np.linalg.norm(Ex, axis=0) + 1e-12
             r = num / den
-            w = np.exp(-0.5 * (r / self.sigma)**2)
+            w = np.exp(-0.5 * (r / self.sigma) ** 2)
             # weighted 8pt
             Np = len(r)
-            A = np.zeros((Np,9))
+            A = np.zeros((Np, 9))
             for i in range(Np):
-                u0,v0 = x0[i]; u1,v1 = x1[i]
-                A[i] = [u1*u0, u1*v0, u1, v1*u0, v1*v0, v1, u0, v0, 1]
+                u0, v0 = x0[i]
+                u1, v1 = x1[i]
+                A[i] = [u1 * u0, u1 * v0, u1, v1 * u0, v1 * v0, v1, u0, v0, 1]
             W = np.sqrt(w)
-            Aw = W[:,None]*A
+            Aw = W[:, None] * A
             U, S, Vt = svd(Aw)
-            e = Vt.T[:,-1]
-            E_next = e.reshape(3,3)
+            e = Vt.T[:, -1]
+            E_next = e.reshape(3, 3)
             # enforce rank-2
             Ue, Se, Vte = svd(E_next)
-            Se[2]=0
+            Se[2] = 0
             E_next = Ue @ np.diag(Se) @ Vte
-            if np.linalg.norm(E_next-E_curr)<1e-6:
+            if np.linalg.norm(E_next - E_curr) < 1e-6:
                 break
             E_curr = E_next
         E_refined = E_curr
@@ -128,24 +136,28 @@ class PoseEstimator:
 
         # 6) Recover pose
         _, R_est, t_unit, mask2 = cv2.recoverPose(
-            E_final, pts0, pts1, cameraMatrix=K, mask=mask_final.astype(np.uint8))
+            E_final, pts0, pts1, cameraMatrix=K, mask=mask_final.astype(np.uint8)
+        )
         mask_bool = mask2.ravel().astype(bool)
 
         # 7) Cheirality & sign
-        P0 = K @ np.hstack([np.eye(3), np.zeros((3,1))])
+        P0 = K @ np.hstack([np.eye(3), np.zeros((3, 1))])
         idxs = np.where(mask_bool)[0]
         if idxs.size:
-            sel = idxs[:min(20, idxs.size)]
-            pts0_s = pts0[sel].T; pts1_s = pts1[sel].T
+            sel = idxs[: min(20, idxs.size)]
+            pts0_s = pts0[sel].T
+            pts1_s = pts1[sel].T
             P1p = K @ np.hstack([R_est, t_unit])
             P1n = K @ np.hstack([R_est, -t_unit])
-            Xp = cv2.triangulatePoints(P0,P1p,pts0_s,pts1_s)
-            Xn = cv2.triangulatePoints(P0,P1n,pts0_s,pts1_s)
-            Xp = Xp[:3]/Xp[3]; Xn = Xn[:3]/Xn[3]
-            X1p = R_est@Xp + t_unit; X1n = R_est@Xn - t_unit
-            if np.sum((Xp[2]>0)&(X1n[2]>0)) > np.sum((Xp[2]>0)&(X1p[2]>0)):
+            Xp = cv2.triangulatePoints(P0, P1p, pts0_s, pts1_s)
+            Xn = cv2.triangulatePoints(P0, P1n, pts0_s, pts1_s)
+            Xp = Xp[:3] / Xp[3]
+            Xn = Xn[:3] / Xn[3]
+            X1p = R_est @ Xp + t_unit
+            X1n = R_est @ Xn - t_unit
+            if np.sum((Xp[2] > 0) & (X1n[2] > 0)) > np.sum((Xp[2] > 0) & (X1p[2] > 0)):
                 t_unit = -t_unit
-        if np.dot(t_unit.ravel(), calib["t"].ravel())<0:
+        if np.dot(t_unit.ravel(), calib["t"].ravel()) < 0:
             t_unit = -t_unit
 
         # 8) Scale

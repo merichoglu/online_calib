@@ -201,7 +201,7 @@ def main():
         ang_rel = np.clip((np.trace(Rdiff_rel) - 1) / 2, -1.0, 1.0)
         rel_rot_err = np.degrees(np.arccos(ang_rel))
 
-        # --- write CSV (only for accepted frames) ---
+        # --- write CSV ---
         writer.writerow(
             [
                 idx,
@@ -224,7 +224,7 @@ def main():
             ]
         )
 
-        # --- visualization (only for accepted frames) ---
+        # --- visualization ---
         inliers = [m for i, m in enumerate(matches) if mask[i]]
         vis = cv2.drawMatches(
             img0,
