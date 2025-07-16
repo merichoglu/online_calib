@@ -62,8 +62,8 @@ The filtered extrinsic estimates and evaluation CSV will be written under `outpu
 | ------------------------------ | ------------------------------ |---------------------------------------------------|
 | **Abs. Translation Error (m)** | **0.192 ± 0.050 (0.107–0.391)**| Total deviation from ground truth (long-term accuracy). |
 | **Abs. Rotation Error (°)**    | **1.75 ± 0.80 (0.45–3.78)**    | Total angular deviation from ground truth orientation. |
-| **Rel. Translation Error (m)** | 0.027 ± 0.011 (0.008–0.050)    | Frame-to-frame translational consistency (short-term stability). |
-| **Rel. Rotation Error (°)**    | **0.262 ± 0.142 (0.010–0.400)**| Frame-to-frame rotational consistency (short-term smoothness). |
+| **Rel. Translation Error (m)** | **0.031 ± 0.012 (0.010–0.064)**    | Frame-to-frame translational consistency (short-term stability). |
+| **Rel. Rotation Error (°)**    | **0.312 ± 0.165 (0.011–0.500)**| Frame-to-frame rotational consistency (short-term smoothness). |
 
 - **Absolute Error** measures the global accuracy and cumulative drift across the entire sequence.
 - **Relative Error** indicates the stability and smoothness between consecutive frames, important for real-time robustness.
