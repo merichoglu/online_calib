@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+# scripts/run_online.py
+
 import os
 import sys
 import argparse
@@ -199,12 +200,6 @@ def main():
         Rdiff_rel = gt_Rrel.T @ est_Rrel
         ang_rel = np.clip((np.trace(Rdiff_rel) - 1) / 2, -1.0, 1.0)
         rel_rot_err = np.degrees(np.arccos(ang_rel))
-
-        # ── OUTLIER REJECTION ON LARGE ROTATION JUMPS ──
-        MAX_ROT_JUMP_DEG = 3.0
-        if abs_rot_err > MAX_ROT_JUMP_DEG:
-            print(f"[frame {idx}] rejecting large rotation jump: {abs_rot_err:.1f}°")
-            continue
 
         # --- write CSV (only for accepted frames) ---
         writer.writerow(
