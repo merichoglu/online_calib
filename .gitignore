@@ -5,5 +5,6 @@ data_vo/
 data_stereo/
 data_cb/
 venv/
+models/
 __pycache__/*.pyc
 __pycache__/
