@@ -22,31 +22,32 @@ def parse_args():
         description="Run feature pipeline and log pose errors"
     )
     parser.add_argument(
-        "-c", "--config", default="configs/default.yaml",
-        help="Path to YAML config file"
+        "-c",
+        "--config",
+        default="configs/default.yaml",
+        help="Path to YAML config file",
     )
     parser.add_argument(
         "--dataset",
         choices=["stereo", "vo", "cb"],
         default="stereo",
-        help="Dataset: stereo, vo, or cb"
+        help="Dataset: stereo, vo, or cb",
     )
     parser.add_argument(
-        "-s", "--split", default="training",
+        "-s",
+        "--split",
+        default="training",
         choices=["training", "testing"],
-        help="Stereo split (ignored for vo/cb)"
+        help="Stereo split (ignored for vo/cb)",
     )
     parser.add_argument(
-        "--base-dir", default="data_cb",
-        help="Base directory for vo or cb datasets"
+        "--base-dir", default="data_cb", help="Base directory for vo or cb datasets"
     )
     parser.add_argument(
-        "--samples", type=int, default=5,
-        help="Number of sample match visualizations"
+        "--samples", type=int, default=5, help="Number of sample match visualizations"
     )
     parser.add_argument(
-        "-o", "--out-dir", default="outputs",
-        help="Directory to save outputs"
+        "-o", "--out-dir", default="outputs", help="Directory to save outputs"
     )
     return parser.parse_args()
 
@@ -58,12 +59,14 @@ def main():
     # Loader selection
     if args.dataset == "stereo":
         from stereo_data_loader import KITTI_StereoLoader as Loader
+
         loader = Loader(split=args.split, config_path=args.config)
         calib = loader.calib
         out_base = os.path.join(args.out_dir, "samples_stereo")
 
     elif args.dataset == "vo":
         from vo_data_loader import KITTI_VOLoader as Loader
+
         vo_cfg = cfg["data_vo"]
         loader = Loader(
             sequence=vo_cfg["sequence"],
@@ -76,6 +79,7 @@ def main():
 
     else:  # cb
         from cb_data_loader import CheckerBoardLoader as Loader
+
         loader = Loader(base_dir=args.base_dir)
         calib = loader.calib
         out_base = os.path.join(args.out_dir, "samples_cb")
@@ -90,8 +94,12 @@ def main():
     os.makedirs(sample_dir, exist_ok=True)
 
     fieldnames = [
-        "frame", "mean_error", "median_error",
-        "inlier_ratio", "rot_error_deg", "trans_error_deg"
+        "frame",
+        "mean_error",
+        "median_error",
+        "inlier_ratio",
+        "rot_error_deg",
+        "trans_error_deg",
     ]
     with open(stats_file, "w", newline="") as csv_f:
         writer = csv.DictWriter(csv_f, fieldnames=fieldnames)
@@ -107,16 +115,15 @@ def main():
             inliers = [m for i, m in enumerate(matches) if mask_bool[i]]
 
             stats = reprojection_error(
-                kp0, kp1, inliers, num_total,
-                calib['R'], calib['t'], calib
+                kp0, kp1, inliers, num_total, calib["R"], calib["t"], calib
             )
 
-            R_delta = R_est @ calib['R'].T
+            R_delta = R_est @ calib["R"].T
             rot_error_deg = np.degrees(
                 np.arccos(np.clip((np.trace(R_delta) - 1) / 2, -1.0, 1.0))
             )
             t_dir_est = t_est.flatten() / np.linalg.norm(t_est)
-            t_dir_gt  = calib['t'].flatten() / np.linalg.norm(calib['t'])
+            t_dir_gt = calib["t"].flatten() / np.linalg.norm(calib["t"])
             trans_error_deg = np.degrees(
                 np.arccos(np.clip(np.dot(t_dir_est, t_dir_gt), -1.0, 1.0))
             )
@@ -127,21 +134,29 @@ def main():
                 "median_error": stats["median_error"],
                 "inlier_ratio": stats["inlier_ratio"],
                 "rot_error_deg": rot_error_deg,
-                "trans_error_deg": trans_error_deg
+                "trans_error_deg": trans_error_deg,
             }
             writer.writerow(row)
 
             if count < args.samples:
                 vis = cv2.drawMatches(
-                    img0, kp0, img1, kp1, inliers,
-                    None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS
+                    img0,
+                    kp0,
+                    img1,
+                    kp1,
+                    inliers,
+                    None,
+                    flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
                 )
                 cv2.imwrite(os.path.join(sample_dir, f"{idx}_matches.png"), vis)
 
-            print(f"[{idx}] IR={stats['inlier_ratio']:.2f}, R={rot_error_deg:.2f}°, T={trans_error_deg:.2f}°")
+            print(
+                f"[{idx}] IR={stats['inlier_ratio']:.2f}, R={rot_error_deg:.2f}°, T={trans_error_deg:.2f}°"
+            )
 
     print(f"Stats saved to {stats_file}")
     print(f"Samples saved to {sample_dir}")
+
 
 if __name__ == "__main__":
     main()
