@@ -4,15 +4,18 @@ import cv2
 import yaml
 import numpy as np
 
+
 class Matcher:
-    def __init__(self, config_path='../configs/default.yaml'):
-        cfg = yaml.safe_load(open(config_path, 'r'))
-        self.ratio = cfg['matcher']['ratio_test']
+    def __init__(self, config_path="../configs/default.yaml"):
+        cfg = yaml.safe_load(open(config_path, "r"))
+        self.ratio = cfg["matcher"]["ratio_test"]
         # maximum allowed row difference for epipolar constraint (in pixels)
-        self.max_row_diff = cfg['matcher'].get('max_row_diff', 2)
+        self.max_row_diff = cfg["matcher"].get("max_row_diff", 2)
         # brute-force Hamming matcher (good for ORB)
         self.bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
-        print(f"Matcher initialized with ratio={self.ratio}, max_row_diff={self.max_row_diff}")
+        print(
+            f"Matcher initialized with ratio={self.ratio}, max_row_diff={self.max_row_diff}"
+        )
 
     def match(self, kp0, kp1, des0, des1):
         """
@@ -46,18 +49,14 @@ class Matcher:
                 F, fm_mask = cv2.findFundamentalMat(
                     pts0,
                     pts1,
-                    cv2.USAC_MAGSAC,            # method
-                    1.0,                        # initial ransacReprojThreshold
-                    0.99                        # confidence level
+                    cv2.USAC_MAGSAC,  # method
+                    1.0,  # initial ransacReprojThreshold
+                    0.99,  # confidence level
                 )
             except cv2.error:
                 # fallback to standard RANSAC if MAGSAC fails
                 F, fm_mask = cv2.findFundamentalMat(
-                    pts0,
-                    pts1,
-                    cv2.FM_RANSAC,
-                    1.0,
-                    0.99
+                    pts0, pts1, cv2.FM_RANSAC, 1.0, 0.99
                 )
 
             if fm_mask is not None:

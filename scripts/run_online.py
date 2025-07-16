@@ -25,23 +25,26 @@ def parse_args():
         description="Online extrinsic calibration streaming"
     )
     parser.add_argument(
-        "-c", "--config", default="configs/default.yaml",
-        help="Path to YAML config file"
+        "-c",
+        "--config",
+        default="configs/default.yaml",
+        help="Path to YAML config file",
     )
     parser.add_argument(
         "--dataset",
         choices=["stereo", "vo", "cb"],
         default="stereo",
-        help="Which dataset to use: stereo, vo, or cb"
+        help="Which dataset to use: stereo, vo, or cb",
     )
     parser.add_argument(
-        "-s", "--split", default="training",
+        "-s",
+        "--split",
+        default="training",
         choices=["training", "testing"],
-        help="Stereo split (ignored for vo/cb)"
+        help="Stereo split (ignored for vo/cb)",
     )
     parser.add_argument(
-        "--delay", type=float, default=0.0,
-        help="Delay between frames in seconds"
+        "--delay", type=float, default=0.0, help="Delay between frames in seconds"
     )
     return parser.parse_args()
 
@@ -53,13 +56,15 @@ def main():
     # --- loader & calib selection ---
     if args.dataset == "stereo":
         from stereo_data_loader import KITTI_StereoLoader as Loader
+
         loader = Loader(split=args.split, config_path=args.config)
-        calib  = loader.calib
+        calib = loader.calib
         base_out = os.path.join("outputs", "online", "stereo_results")
         seq = args.split
 
     elif args.dataset == "vo":
         from vo_data_loader import KITTI_VOLoader as Loader
+
         vo_cfg = cfg["data_vo"]
         loader = Loader(
             sequence=vo_cfg["sequence"],
@@ -67,34 +72,30 @@ def main():
             calib_dir=vo_cfg["calib_dir"],
             cam=vo_cfg["cam"],
         )
-        calib = {
-            "K0": loader.K0,
-            "K1": loader.K1,
-            "R":  loader.R,
-            "t":  loader.t
-        }
+        calib = {"K0": loader.K0, "K1": loader.K1, "R": loader.R, "t": loader.t}
         base_out = os.path.join("outputs", "online", "vo_results")
         seq = vo_cfg["sequence"]
 
     else:
         from cb_data_loader import CheckerBoardLoader as Loader
+
         loader = Loader(base_dir="data_cb")
-        calib  = loader.calib
+        calib = loader.calib
         base_out = os.path.join("outputs", "online", "cb_results")
         seq = "cb"
 
     # --- initialize pipeline ---
-    FE    = FeatureExtractor(config_path=args.config)
-    M     = Matcher(config_path=args.config)
-    PE    = PoseEstimator(config_path=args.config)
-    EKF   = OnlineCalibrator(config_path=args.config)
+    FE = FeatureExtractor(config_path=args.config)
+    M = Matcher(config_path=args.config)
+    PE = PoseEstimator(config_path=args.config)
+    EKF = OnlineCalibrator(config_path=args.config)
 
     # Prepare grid collector parameters from config
     coll_cfg = cfg.get("collection", {})
-    grid_rows    = coll_cfg.get("grid_rows", 8)
-    grid_cols    = coll_cfg.get("grid_cols", 16)
+    grid_rows = coll_cfg.get("grid_rows", 8)
+    grid_cols = coll_cfg.get("grid_cols", 16)
     max_per_cell = coll_cfg.get("max_per_cell", 200)
-    collector    = None  # will init on first frame once we know img size
+    collector = None  # will init on first frame once we know img size
 
     # prepare output dirs
     os.makedirs(base_out, exist_ok=True)
@@ -107,14 +108,27 @@ def main():
     csv_path = os.path.join(tables_dir, f"{args.dataset}_seq_{seq}.csv")
     cf = open(csv_path, "w", newline="")
     writer = csv.writer(cf)
-    writer.writerow([
-        "frame", "abs_tx", "abs_ty", "abs_tz",
-        "gt_abs_tx", "gt_abs_ty", "gt_abs_tz",
-        "abs_trans_err", "abs_rot_err_deg",
-        "rel_tx", "rel_ty", "rel_tz",
-        "gt_rel_tx", "gt_rel_ty", "gt_rel_tz",
-        "rel_trans_err", "rel_rot_err_deg",
-    ])
+    writer.writerow(
+        [
+            "frame",
+            "abs_tx",
+            "abs_ty",
+            "abs_tz",
+            "gt_abs_tx",
+            "gt_abs_ty",
+            "gt_abs_tz",
+            "abs_trans_err",
+            "abs_rot_err_deg",
+            "rel_tx",
+            "rel_ty",
+            "rel_tz",
+            "gt_rel_tx",
+            "gt_rel_ty",
+            "gt_rel_tz",
+            "rel_trans_err",
+            "rel_rot_err_deg",
+        ]
+    )
 
     cv2.namedWindow("Matches", cv2.WINDOW_NORMAL)
     cv2.resizeWindow("Matches", 800, 600)
@@ -125,7 +139,9 @@ def main():
     # --- processing loop ---
     for idx_raw, img0, img1 in loader.image_pairs():
         # parse frame id
-        idx = int(idx_raw) if isinstance(idx_raw, str) and idx_raw.isdigit() else idx_raw
+        idx = (
+            int(idx_raw) if isinstance(idx_raw, str) and idx_raw.isdigit() else idx_raw
+        )
 
         # init collector once we know image size
         if collector is None:
@@ -134,7 +150,7 @@ def main():
                 img_shape=(h, w),
                 grid_rows=grid_rows,
                 grid_cols=grid_cols,
-                N_max=max_per_cell
+                N_max=max_per_cell,
             )
 
         # 1) feature extraction
@@ -149,7 +165,8 @@ def main():
 
         # 4) pose estimation + smoothing
         Rk, tk, mask = PE.estimate(kp0, kp1, matches, calib)
-        R_filt, t_filt = EKF.update(Rk, tk)
+        inliers = int(mask.sum())
+        R_filt, t_filt = EKF.update(Rk, tk, inliers=inliers)
 
         # --- compute absolute errors ---
         gt_R_abs, gt_t_abs = calib["R"], calib["t"]
@@ -164,7 +181,7 @@ def main():
             est_trel = prev_R.T @ (t_filt - prev_t)
         else:
             est_Rrel = np.eye(3)
-            est_trel = np.zeros((3,1))
+            est_trel = np.zeros((3, 1))
 
         if args.dataset == "vo":
             if isinstance(idx, int) and idx > 0:
@@ -176,7 +193,7 @@ def main():
             gt_trel = gt_R_prev.T @ (gt_next[1] - gt_t_prev)
         else:
             gt_Rrel = np.eye(3)
-            gt_trel = np.zeros((3,1))
+            gt_trel = np.zeros((3, 1))
 
         rel_trans_err = np.linalg.norm(gt_trel - est_trel)
         Rdiff_rel = gt_Rrel.T @ est_Rrel
@@ -190,30 +207,62 @@ def main():
             continue
 
         # --- write CSV (only for accepted frames) ---
-        writer.writerow([
-            idx,
-            t_filt[0,0], t_filt[1,0], t_filt[2,0],
-            gt_t_abs[0,0], gt_t_abs[1,0], gt_t_abs[2,0],
-            abs_trans_err, abs_rot_err,
-            est_trel[0,0], est_trel[1,0], est_trel[2,0],
-            gt_trel[0,0], gt_trel[1,0], gt_trel[2,0],
-            rel_trans_err, rel_rot_err,
-        ])
+        writer.writerow(
+            [
+                idx,
+                t_filt[0, 0],
+                t_filt[1, 0],
+                t_filt[2, 0],
+                gt_t_abs[0, 0],
+                gt_t_abs[1, 0],
+                gt_t_abs[2, 0],
+                abs_trans_err,
+                abs_rot_err,
+                est_trel[0, 0],
+                est_trel[1, 0],
+                est_trel[2, 0],
+                gt_trel[0, 0],
+                gt_trel[1, 0],
+                gt_trel[2, 0],
+                rel_trans_err,
+                rel_rot_err,
+            ]
+        )
 
         # --- visualization (only for accepted frames) ---
         inliers = [m for i, m in enumerate(matches) if mask[i]]
         vis = cv2.drawMatches(
-            img0, kp0, img1, kp1, inliers, None,
-            flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS
+            img0,
+            kp0,
+            img1,
+            kp1,
+            inliers,
+            None,
+            flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
         )
-        cv2.putText(vis, f"abs_err={abs_trans_err:.2f}m rot={abs_rot_err:.1f}°",
-                    (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
-        cv2.putText(vis, f"rel_err={rel_trans_err:.2f}m rot={rel_rot_err:.1f}°",
-                    (10, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
-        cv2.imshow("Matches",
-                   cv2.resize(vis, None, fx=0.5, fy=0.5,
-                              interpolation=cv2.INTER_AREA))
-        if cv2.waitKey(int(args.delay*1000)) & 0xFF == ord("q"):
+        cv2.putText(
+            vis,
+            f"abs_err={abs_trans_err:.2f}m rot={abs_rot_err:.1f}°",
+            (10, 25),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 0),
+            1,
+        )
+        cv2.putText(
+            vis,
+            f"rel_err={rel_trans_err:.2f}m rot={rel_rot_err:.1f}°",
+            (10, 45),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 0),
+            1,
+        )
+        cv2.imshow(
+            "Matches",
+            cv2.resize(vis, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA),
+        )
+        if cv2.waitKey(int(args.delay * 1000)) & 0xFF == ord("q"):
             break
 
         # ── integrate into trajectory ──
