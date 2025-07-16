@@ -1,3 +1,5 @@
+#TODO: TRY LEARNED FEATURE METHODS LIKE SUPERPOINT
+
 # Online Stereo Camera Extrinsic Calibration
 
 A lightweight real-time pipeline for certifiable, online extrinsic calibration of a fixed stereo camera rig. This repo implements the method from "Online Extrinsic Parameters Calibration of On-Board Stereo Cameras Based on Certifiable Optimization," with additional practical enhancements for faster convergence and low-jitter output.
