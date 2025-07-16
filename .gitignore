@@ -5,6 +5,6 @@ data_vo/
 data_stereo/
 data_cb/
 venv/
-models/
+models/*.pth
 __pycache__/*.pyc
 __pycache__/
