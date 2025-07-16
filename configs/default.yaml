@@ -13,17 +13,17 @@ data_vo:
 # feature params
 feature:
   type: ORB
-  n_features: 2000
+  n_features: 1000
 
 # matcher params
 matcher:
-  ratio_test: 0.75
-  max_row_diff: 8
+  ratio_test: 0.65
+  max_row_diff: 2
 
 # RANSAC / pose
 ransac:
   prob: 0.999
-  thresh: 0.6
+  thresh: 1.0
 
 # smoothing for EKF
 smoothing:

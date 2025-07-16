@@ -41,9 +41,12 @@ class PoseEstimator:
             pts0,
             pts1,
             calib["K0"],
-            method=cv2.RANSAC,
+            None,
+            calib["K0"],
+            None,
+            method=cv2.USAC_MAGSAC,
             prob=self.prob,
-            threshold=self.thresh,
+            threshold=self.thresh
         )
 
         # Handle failure of essential matrix estimation

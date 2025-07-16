@@ -3,3 +3,4 @@ data_vo/
 data_stereo/
 data_cb/
 venv/
+__pycache__/

@@ -53,7 +53,7 @@ class GridDataCollector:
             # compute rho_ij = rho0 − alpha * ||center−C0||^2
             center = self.centers[ci, cj]
             dist2  = np.sum((center - self.C0)**2)
-            rho = self.rho0 + self.alpha * dist2
+            rho = self.rho0 - self.alpha * dist2
             cap    = int(np.floor(rho * self.N_max))
             if cap <= 0:
                 continue
