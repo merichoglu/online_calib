@@ -8,3 +8,4 @@ venv/
 models/*.pth
 __pycache__/*.pyc
 __pycache__/
+models/superglue_author/
