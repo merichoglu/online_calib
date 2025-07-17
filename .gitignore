@@ -7,3 +7,4 @@ data_cb/
 venv/
 __pycache__/*.pyc
 __pycache__/
+models/
