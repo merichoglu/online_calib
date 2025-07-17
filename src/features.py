@@ -2,6 +2,7 @@
 
 import cv2
 import yaml
+import numpy as np
 
 from superpoint import SuperPointFrontend
 from models.superpoint import SuperPoint as SPModel
@@ -37,7 +38,12 @@ class FeatureExtractor:
         """
         if self.type in ("ORB", "SIFT"):
             kp, des = self.det.detectAndCompute(img, None)
+            if des is None:
+                des = np.empty((0, 128), dtype=np.float32)  # 128-dim for SIFT
+            else:
+                des = des.astype("float32")
             return kp, des, None
+
 
         # SuperPoint branch
         pts, des, scores = self.det.run(img)
