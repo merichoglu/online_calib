@@ -1,10 +1,11 @@
-# paths
+# configs/default.yaml
+
+# data paths
 data_stereo:
   raw_dir: ../data_stereo/raw
   proc_dir: ../data_stereo/processed
 
 data_vo:
-  # both images and calib live under the same root folder
   base_dir: data_vo/dataset
   calib_dir: data_vo/dataset
   sequence: '01'
@@ -12,13 +13,20 @@ data_vo:
 
 # feature params
 feature:
-  type: ORB
+  type: ORB            # ORB | SIFT | SuperPoint
   n_features: 2000
+  superpoint:
+    weights_path: models/superpoint_v1.pth
+    device: cuda
 
 # matcher params
 matcher:
+  type: BF             # BF | SuperGlue
   ratio_test: 0.75
   max_row_diff: 2
+  superglue:
+    weights_path: models/superglue_outdoor.pth
+    device: cuda
 
 # RANSAC / pose
 ransac:
@@ -27,17 +35,14 @@ ransac:
 
 # smoothing for EKF
 smoothing:
-  alpha: 0.10  # between 0 (no updates) and 1 (no smoothing)
+  alpha: 0.10
   rot_thresh_deg: 5.0
-  warmup_frames: 15 # number of frames to collect before filtering
+  warmup_frames: 15
 
-# --------------------------------------
 # grid-based match collection
 collection:
-  # how many rows/cols to split the image into
   grid_rows:    8
   grid_cols:   16
-  # maximum matches to keep per cell before scaling by rho
   max_per_cell: 200
 
 gnc:

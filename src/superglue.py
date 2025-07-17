@@ -4,8 +4,9 @@ import torch
 import numpy as np
 import cv2
 
+
 class SuperGlueMatcher:
-    def __init__(self, model, device='cuda'):
+    def __init__(self, model, device="cuda"):
         self.model = model.eval().to(device)
         self.device = device
 
@@ -14,12 +15,12 @@ class SuperGlueMatcher:
             return []
 
         data = {
-            'keypoints0': torch.from_numpy(kpts0).float().unsqueeze(0),
-            'keypoints1': torch.from_numpy(kpts1).float().unsqueeze(0),
-            'descriptors0': torch.from_numpy(desc0).float().unsqueeze(0),
-            'descriptors1': torch.from_numpy(desc1).float().unsqueeze(0),
-            'image0': torch.empty((1, 1, *image_shape)),  # dummy placeholder
-            'image1': torch.empty((1, 1, *image_shape)),
+            "keypoints0": torch.from_numpy(kpts0).float().unsqueeze(0),
+            "keypoints1": torch.from_numpy(kpts1).float().unsqueeze(0),
+            "descriptors0": torch.from_numpy(desc0).float().unsqueeze(0),
+            "descriptors1": torch.from_numpy(desc1).float().unsqueeze(0),
+            "image0": torch.empty((1, 1, *image_shape)),  # dummy placeholder
+            "image1": torch.empty((1, 1, *image_shape)),
         }
         for k in data:
             data[k] = data[k].to(self.device)
@@ -27,7 +28,7 @@ class SuperGlueMatcher:
         with torch.no_grad():
             pred = self.model(data)
 
-        matches = pred['matches0'][0].cpu().numpy()
+        matches = pred["matches0"][0].cpu().numpy()
         matched_kp0 = []
         matched_kp1 = []
         for i, m in enumerate(matches):

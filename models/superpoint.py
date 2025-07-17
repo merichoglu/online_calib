@@ -1,5 +1,3 @@
-# models/superpoint.py
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,13 +14,11 @@ class SuperPointNet(nn.Module):
             nn.Conv2d(64, 64, 3, stride=1, padding=1),
             self.relu,
             nn.MaxPool2d(2, 2),
-
             nn.Conv2d(64, 64, 3, stride=1, padding=1),
             self.relu,
             nn.Conv2d(64, 64, 3, stride=1, padding=1),
             self.relu,
             nn.MaxPool2d(2, 2),
-
             nn.Conv2d(64, 128, 3, stride=1, padding=1),
             self.relu,
             nn.Conv2d(128, 128, 3, stride=1, padding=1),
@@ -44,10 +40,7 @@ class SuperPointNet(nn.Module):
         desc = self.desc_head(x)
         desc = F.normalize(desc, p=2, dim=1)
 
-        return {
-            'prob': prob,
-            'descriptors': desc
-        }
+        return {"prob": prob, "descriptors": desc}
 
     def softmax_pixelwise(self, logits):
         b, c, h, w = logits.shape
@@ -59,5 +52,10 @@ class SuperPointNet(nn.Module):
 def SuperPoint(config):
     model = SuperPointNet()
     weights = torch.load(config["weights_path"], map_location="cpu")
-    model.load_state_dict(weights)
+    # load_state_dict(strict=False) will ignore mismatches
+    missing, unexpected = model.load_state_dict(weights, strict=False)
+    if missing:
+        print(f"[SuperPoint] Warning: missing keys in state_dict: {missing}")
+    if unexpected:
+        print(f"[SuperPoint] Warning: unexpected keys in state_dict: {unexpected}")
     return model

@@ -7,7 +7,7 @@ import numpy as np
 
 
 class SuperPointFrontend:
-    def __init__(self, model, device='cuda'):
+    def __init__(self, model, device="cuda"):
         self.model = model.eval().to(device)
         self.device = device
 
@@ -20,18 +20,37 @@ class SuperPointFrontend:
         with torch.no_grad():
             pred = self.model(inp)
 
-        keypoints, scores = self._extract_keypoints(pred)
-        descriptors = pred['descriptors'][0].cpu().numpy()
-        return keypoints, descriptors, scores
+        # pred['prob'][0]: shape (C, H, W) where C=65 (including dustbin)
+        prob_tensor = pred["prob"][0].cpu().numpy()
+        # collapse channels 0..63 into a single 2D heatmap (ignore dustbin at index 64)
+        heatmap = prob_tensor[:64].sum(axis=0)
 
-    def _extract_keypoints(self, pred, conf_thresh=0.015, nms_dist=4):
-        prob = pred['prob'][0].cpu().numpy()
-        keypoints = self._nms(prob, nms_dist)
-        keypoints = [kp for kp in keypoints if prob[kp[1], kp[0]] > conf_thresh]
-        scores = [prob[kp[1], kp[0]] for kp in keypoints]
-        return np.array(keypoints), np.array(scores)
+        # now do NMS on the 2D heatmap
+        keypoint_coords = self._nms(heatmap, nms_dist=4)
+        # filter by confidence threshold
+        filtered = [(x, y) for x, y in keypoint_coords if heatmap[y, x] > 0.015]
+        scores = [float(heatmap[y, x]) for x, y in filtered]
 
-    def _nms(self, heatmap, dist_thresh):
+        # get descriptors corresponding to remaining keypoints
+        descriptors = pred["descriptors"][0].cpu().numpy()  # shape (D, H, W)
+        desc_list = []
+        for x, y in filtered:
+            desc_list.append(descriptors[:, y, x])
+        descs = (
+            np.stack(desc_list, axis=0)
+            if desc_list
+            else np.zeros((0, descriptors.shape[0]))
+        )
+
+        return np.array(filtered), descs, np.array(scores)
+
+    def _nms(self, heatmap, nms_dist):
+        """
+        Non-maximum suppression on a 2D heatmap.
+        :param heatmap: 2D numpy array
+        :param nms_dist: minimum distance for suppression
+        :return: list of (x, y) keypoint coordinates
+        """
         keypoints = []
         H, W = heatmap.shape
         for y in range(H):
@@ -39,10 +58,10 @@ class SuperPointFrontend:
                 val = heatmap[y, x]
                 if val < 1e-6:
                     continue
-                x0 = max(x - dist_thresh, 0)
-                x1 = min(x + dist_thresh + 1, W)
-                y0 = max(y - dist_thresh, 0)
-                y1 = min(y + dist_thresh + 1, H)
+                x0 = max(x - nms_dist, 0)
+                x1 = min(x + nms_dist + 1, W)
+                y0 = max(y - nms_dist, 0)
+                y1 = min(y + nms_dist + 1, H)
                 if val >= np.max(heatmap[y0:y1, x0:x1]):
                     keypoints.append((x, y))
         return keypoints
