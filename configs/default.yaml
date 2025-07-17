@@ -12,7 +12,7 @@ data_vo:
 
 # feature params
 feature:
-  type: SIFT
+  type: ORB
   n_features: 1500
 
 # matcher params
