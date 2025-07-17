@@ -12,8 +12,8 @@ data_vo:
 
 # feature params
 feature:
-  type: ORB
-  n_features: 2000
+  type: SIFT
+  n_features: 1500
 
 # matcher params
 matcher:
@@ -23,7 +23,7 @@ matcher:
 # RANSAC / pose
 ransac:
   prob: 0.999
-  thresh: 0.5
+  thresh: 0.75
 
 # smoothing for EKF
 smoothing:
@@ -42,3 +42,12 @@ collection:
 
 gnc:
   max_iters: 20
+
+# fisheye camera intrinsics for checkerboard undistortion/matching
+intrinsics:
+  K: [[550.0395,   0.0,   960.0],
+      [  0.0, 533.372225, 768.0],
+      [  0.0,    0.0,     1.0]]
+  D: [0.0, 0.0, 0.0, 0.0]
+  height: 1536
+  width: 1920
