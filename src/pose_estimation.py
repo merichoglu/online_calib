@@ -1,5 +1,3 @@
-# src/pose_estimation.py
-
 import cv2
 import numpy as np
 import yaml
@@ -77,14 +75,16 @@ class PoseEstimator:
         E8, mask8 = cv2.findEssentialMat(
             pts0,
             pts1,
-            calib["K0"],
-            None,
-            calib["K0"],
-            None,
+            calib["K0"], None,
+            calib["K0"], None,
             method=cv2.RANSAC,
             prob=self.prob,
             threshold=self.thresh,
         )
+        # ensure E8 is a 3x3 matrix (handle multiple or wrong-shaped returns)
+        if E8 is not None and E8.shape != (3, 3):
+            E8 = E8.flatten()[:9].reshape(3, 3)
+
         if E8 is None or mask8 is None:
             return np.eye(3), np.zeros((3, 1)), np.zeros(len(matches), dtype=bool)
         mask8 = mask8.ravel().astype(bool)
@@ -123,6 +123,7 @@ class PoseEstimator:
             if np.linalg.norm(E_next - E_curr) < 1e-6:
                 break
             E_curr = E_next
+
         E_refined = E_curr
 
         # 5) SDP certification
