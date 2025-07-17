@@ -52,36 +52,71 @@ The filtered extrinsic estimates and evaluation CSV will be written under `outpu
 
 #### Error Metrics Over Time
 
-![Stereo Error Metrics](outputs/online/stereo_results/graphs/stereo_seq_training.png)
+**ORB:**
+
+![ORB Error](outputs/online/stereo_results/graphs/orb_seq_training.png)
+
+**SIFT:**
+
+![SIFT Error](outputs/online/stereo_results/graphs/sift_seq_training.png)
+
+**SuperPoint + SuperGlue:**
+
+![SP+SG Error](outputs/online/stereo_results/graphs/sp_seq_training.png)
 
 ---
 
-## Quantitative Results
+## Quantitative Results (KITTI Stereo Training)
 
-| Metric                         | Value                          | Explanation                                       |
-| ------------------------------ | ------------------------------ |---------------------------------------------------|
-| **Abs. Translation Error (m)** | **0.192 ± 0.050 (0.107–0.391)**| Total deviation from ground truth (long-term accuracy). |
-| **Abs. Rotation Error (°)**    | **1.75 ± 0.80 (0.45–3.78)**    | Total angular deviation from ground truth orientation. |
-| **Rel. Translation Error (m)** | **0.031 ± 0.012 (0.010–0.064)**    | Frame-to-frame translational consistency (short-term stability). |
-| **Rel. Rotation Error (°)**    | **0.312 ± 0.165 (0.011–0.500)**| Frame-to-frame rotational consistency (short-term smoothness). |
+### 📌 ORB
 
-- **Absolute Error** measures the global accuracy and cumulative drift across the entire sequence.
-- **Relative Error** indicates the stability and smoothness between consecutive frames, important for real-time robustness.
+| Metric                  | Mean ± Std    |
+| ----------------------- | ------------- |
+| Abs. Translation Error  | 0.216 ± 0.077 |
+| Abs. Rotation Error (°) | 1.75 ± 1.45   |
+| Rel. Translation Error  | 0.046 ± 0.087 |
+| Rel. Rotation Error (°) | 0.55 ± 1.87   |
 
-*Metrics computed over frames 16–end on the KITTI training split. See CSV under `outputs/online/stereo_results/tables/` for detailed results.*
+### 📌 SIFT
+
+| Metric                  | Mean ± Std    |
+| ----------------------- | ------------- |
+| Abs. Translation Error  | 0.205 ± 0.050 |
+| Abs. Rotation Error (°) | 1.44 ± 0.81   |
+| Rel. Translation Error  | 0.044 ± 0.071 |
+| Rel. Rotation Error (°) | 0.45 ± 0.92   |
+
+### 📌 SuperPoint + SuperGlue
+
+| Metric                  | Mean ± Std    |
+| ----------------------- | ------------- |
+| Abs. Translation Error  | 0.215 ± 0.077 |
+| Abs. Rotation Error (°) | 0.94 ± 0.78   |
+| Rel. Translation Error  | 0.034 ± 0.075 |
+| Rel. Rotation Error (°) | 0.36 ± 0.69   |
+
+### 🔍 Overall Comparison Table
+
+| Method                   | Abs Trans Err (↓) | Abs Rot Err (deg ↓) | Rel Trans Err (↓) | Rel Rot Err (deg ↓) |
+| ------------------------ | ----------------- | ------------------- | ----------------- | ------------------- |
+| **ORB**                  | 0.216 ± 0.077     | 1.75 ± 1.45         | 0.046 ± 0.087     | 0.55 ± 1.87         |
+| **SIFT**                 | **0.205 ± 0.050** | 1.44 ± 0.81         | 0.044 ± 0.071     | 0.45 ± 0.92         |
+| **SuperPoint+SuperGlue** | 0.215 ± 0.077     | **0.94 ± 0.78**     | **0.034 ± 0.075** | **0.36 ± 0.69**     |
+
+---
 
 ## Recommended Metric for Real-time Calibration Task
 
-- **Relative error** (translation & rotation) is the primary metric, reflecting the calibration algorithm's short-term stability and smoothness—crucial for real-time online performance.
-- **Absolute error** (translation & rotation) complements this by assessing long-term accuracy and potential drift.
+* **Relative error** (translation & rotation) is the primary metric, reflecting the calibration algorithm's short-term stability and smoothness—crucial for real-time online performance.
+* **Absolute error** (translation & rotation) complements this by assessing long-term accuracy and potential drift.
+
+---
 
 ## Configuration Highlights
 
-- **Features:** ORB with 2000 keypoints
-- **Matching:** ratio test = 0.75, grid-based spatial cull
-- **Pose Estimation:** RANSAC (0.5 px) + GNC (20 iters) + cheirality check
-- **Filtering:** 15-frame warm-up, complementary filter with adaptive α (squared–ratio), α₀ = 0.10
+* **Features:** ORB, SIFT, or SuperPoint
+* **Matching:** Brute-force/FLANN for classical, SuperGlue for learned descriptors
+* **Pose Estimation:** RANSAC (0.5 px) + GNC (20 iters) + cheirality check
+* **Filtering:** 15-frame warm-up, complementary filter with adaptive α (squared–ratio), α0 = 0.10
 
 See `configs/default.yaml` for full options.
-
-- TODO: Try learned feature methods like SuperPoint
