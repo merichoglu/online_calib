@@ -44,7 +44,6 @@ class FeatureExtractor:
                 des = des.astype("float32")
             return kp, des, None
 
-
         # SuperPoint branch
         pts, des, scores = self.det.run(img)
 

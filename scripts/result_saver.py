@@ -5,6 +5,7 @@ import yaml
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 def save_results(
     results_df: pd.DataFrame, out_dir: str, dataset: str, seq: str
 ) -> None:
@@ -28,7 +29,7 @@ def save_results(
     # load method from config
     with open("configs/default.yaml", "r") as f:
         cfg = yaml.safe_load(f)
-        feat_type = cfg["feature"]["type"].lower()   # orb / sift / superpoint
+        feat_type = cfg["feature"]["type"].lower()  # orb / sift / superpoint
         match_type = cfg["matcher"]["type"].lower()  # bf / superglue
 
     # create prefix: orb, sift, sp
@@ -49,10 +50,22 @@ def save_results(
 
     # Plot and save error graph
     fig, ax = plt.subplots()
-    ax.plot(results_df["frame"], results_df["abs_trans_err"], label="Abs Translation Error")
-    ax.plot(results_df["frame"], results_df["abs_rot_err_deg"], label="Abs Rotation Error (deg)")
-    ax.plot(results_df["frame"], results_df["rel_trans_err"], label="Rel Translation Error")
-    ax.plot(results_df["frame"], results_df["rel_rot_err_deg"], label="Rel Rotation Error (deg)")
+    ax.plot(
+        results_df["frame"], results_df["abs_trans_err"], label="Abs Translation Error"
+    )
+    ax.plot(
+        results_df["frame"],
+        results_df["abs_rot_err_deg"],
+        label="Abs Rotation Error (deg)",
+    )
+    ax.plot(
+        results_df["frame"], results_df["rel_trans_err"], label="Rel Translation Error"
+    )
+    ax.plot(
+        results_df["frame"],
+        results_df["rel_rot_err_deg"],
+        label="Rel Rotation Error (deg)",
+    )
 
     ax.set_xlabel("Frame")
     ax.set_ylabel("Error")

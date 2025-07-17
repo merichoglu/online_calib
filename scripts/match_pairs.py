@@ -22,20 +22,41 @@ def parse_args():
     p = argparse.ArgumentParser(
         description="Fisheye undistort + ORB matching in stitching mode"
     )
-    p.add_argument("--img_dir", required=True,
-                   help="Directory of fisheye images (e.g. data_cb/CheckerBoard)")
-    p.add_argument("--pos_json", required=True,
-                   help="Path to Position.json with keys like 'left_1', etc.")
-    p.add_argument("--config", default="configs/default.yaml",
-                   help="YAML config (for feature/matcher params & intrinsics)")
-    p.add_argument("--output_dir", default="outputs/cb_matches",
-                   help="Where to save match visualizations")
-    p.add_argument("--max_matches", type=int, default=50,
-                   help="Max number of matches to draw per frame")
-    p.add_argument("--balance", type=float, default=0.01,
-                   help="Balance for undistort (0=crop,1=full FOV)")
-    p.add_argument("--fov_scale", type=float, default=0.58,
-                   help="FOV scale for fisheye undistort")
+    p.add_argument(
+        "--img_dir",
+        required=True,
+        help="Directory of fisheye images (e.g. data_cb/CheckerBoard)",
+    )
+    p.add_argument(
+        "--pos_json",
+        required=True,
+        help="Path to Position.json with keys like 'left_1', etc.",
+    )
+    p.add_argument(
+        "--config",
+        default="configs/default.yaml",
+        help="YAML config (for feature/matcher params & intrinsics)",
+    )
+    p.add_argument(
+        "--output_dir",
+        default="outputs/cb_matches",
+        help="Where to save match visualizations",
+    )
+    p.add_argument(
+        "--max_matches",
+        type=int,
+        default=50,
+        help="Max number of matches to draw per frame",
+    )
+    p.add_argument(
+        "--balance",
+        type=float,
+        default=0.01,
+        help="Balance for undistort (0=crop,1=full FOV)",
+    )
+    p.add_argument(
+        "--fov_scale", type=float, default=0.58, help="FOV scale for fisheye undistort"
+    )
     return p.parse_args()
 
 
@@ -63,8 +84,9 @@ def main():
     # determine image size from first key
     first = next(iter(pos.keys()))
     cam0, idx0 = first.split("_")
-    sample = cv2.imread(os.path.join(args.img_dir, f"{cam0}_{idx0}.png"),
-                        cv2.IMREAD_GRAYSCALE)
+    sample = cv2.imread(
+        os.path.join(args.img_dir, f"{cam0}_{idx0}.png"), cv2.IMREAD_GRAYSCALE
+    )
     if sample is None:
         raise RuntimeError(f"Cannot open sample image {cam0}_{idx0}.png")
     h, w = sample.shape
@@ -86,8 +108,7 @@ def main():
     # define camera order and indices
     cams = ["left", "front", "right", "rear"]
     cam_idxs = {
-        c: set(k.split("_")[1] for k in pos if k.startswith(c + "_"))
-        for c in cams
+        c: set(k.split("_")[1] for k in pos if k.startswith(c + "_")) for c in cams
     }
 
     for i in range(len(cams)):
@@ -101,10 +122,12 @@ def main():
 
         for idx in frames:
             # load & undistort
-            im0 = cv2.imread(os.path.join(args.img_dir, f"{c0}_{idx}.png"),
-                             cv2.IMREAD_GRAYSCALE)
-            im1 = cv2.imread(os.path.join(args.img_dir, f"{c1}_{idx}.png"),
-                             cv2.IMREAD_GRAYSCALE)
+            im0 = cv2.imread(
+                os.path.join(args.img_dir, f"{c0}_{idx}.png"), cv2.IMREAD_GRAYSCALE
+            )
+            im1 = cv2.imread(
+                os.path.join(args.img_dir, f"{c1}_{idx}.png"), cv2.IMREAD_GRAYSCALE
+            )
             if im0 is None or im1 is None:
                 print(f"  → failed to load {c0}_{idx} or {c1}_{idx}")
                 continue
@@ -125,13 +148,17 @@ def main():
                 continue
 
             # draw top matches
-            top = sorted(matches, key=lambda m: m.distance)[:args.max_matches]
+            top = sorted(matches, key=lambda m: m.distance)[: args.max_matches]
             vis = cv2.drawMatches(
-                u0, kp0, u1, kp1, top, None,
-                flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS
+                u0,
+                kp0,
+                u1,
+                kp1,
+                top,
+                None,
+                flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
             )
-            outp = os.path.join(args.output_dir,
-                                f"match_{c0}_{c1}_{idx}.png")
+            outp = os.path.join(args.output_dir, f"match_{c0}_{c1}_{idx}.png")
             cv2.imwrite(outp, vis)
 
     print("Done.")

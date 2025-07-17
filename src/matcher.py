@@ -29,8 +29,10 @@ class Matcher:
 
             self.bf = cv2.BFMatcher(norm_type, crossCheck=False)
             norm_name = "L2" if norm_type == cv2.NORM_L2 else "Hamming"
-            print(f"[Matcher] type=BF, metric={norm_name}, "
-                  f"ratio={self.ratio}, max_row_diff={self.max_row_diff}")
+            print(
+                f"[Matcher] type=BF, metric={norm_name}, "
+                f"ratio={self.ratio}, max_row_diff={self.max_row_diff}"
+            )
 
         elif self.type == "SuperGlue":  # ────────── SuperGlue branch ──────────
             sg_cfg = cfg["matcher"]["superglue"]
@@ -106,21 +108,33 @@ class Matcher:
         good = []
         for m, n in knn:
             if m.distance < self.ratio * n.distance:
-                if self.stitching or abs(kp0[m.queryIdx].pt[1] - kp1[m.trainIdx].pt[1]) <= self.max_row_diff:
+                if (
+                    self.stitching
+                    or abs(kp0[m.queryIdx].pt[1] - kp1[m.trainIdx].pt[1])
+                    <= self.max_row_diff
+                ):
                     good.append(m)
 
         # 2) mutual cross-check
         back = {m.queryIdx: m for m in self.bf.match(des1, des0)}
-        mutual = [m for m in good if (bm := back.get(m.trainIdx)) and bm.trainIdx == m.queryIdx]
+        mutual = [
+            m
+            for m in good
+            if (bm := back.get(m.trainIdx)) and bm.trainIdx == m.queryIdx
+        ]
 
         # 3) fundamental-matrix inlier filter
         if len(mutual) >= 8:
             pts0_f = np.float32([kp0[m.queryIdx].pt for m in mutual]).reshape(-1, 1, 2)
             pts1_f = np.float32([kp1[m.trainIdx].pt for m in mutual]).reshape(-1, 1, 2)
             try:
-                _, mask = cv2.findFundamentalMat(pts0_f, pts1_f, cv2.USAC_MAGSAC, 1.0, 0.99)
+                _, mask = cv2.findFundamentalMat(
+                    pts0_f, pts1_f, cv2.USAC_MAGSAC, 1.0, 0.99
+                )
             except cv2.error:  # fallback for < OpenCV 4.5.2
-                _, mask = cv2.findFundamentalMat(pts0_f, pts1_f, cv2.FM_RANSAC, 1.0, 0.99)
+                _, mask = cv2.findFundamentalMat(
+                    pts0_f, pts1_f, cv2.FM_RANSAC, 1.0, 0.99
+                )
             if mask is not None:
                 mutual = [m for m, inlier in zip(mutual, mask.ravel()) if inlier]
 

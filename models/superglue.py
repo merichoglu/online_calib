@@ -2,6 +2,7 @@
 
 from models.superglue_author.models.superglue import SuperGlue as _OfficialSG
 
+
 def SuperGlue(config):
     """
     config: the dict under matcher.superglue in your YAML

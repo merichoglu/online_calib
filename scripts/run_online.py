@@ -25,7 +25,10 @@ def parse_args():
         description="Online extrinsic calibration streaming"
     )
     parser.add_argument(
-        "-c", "--config", default="configs/default.yaml", help="Path to YAML config file"
+        "-c",
+        "--config",
+        default="configs/default.yaml",
+        help="Path to YAML config file",
     )
     parser.add_argument(
         "--dataset",
@@ -53,6 +56,7 @@ def main():
     # --- loader & calib selection ---
     if args.dataset == "stereo":
         from stereo_data_loader import KITTI_StereoLoader as Loader
+
         loader = Loader(split=args.split, config_path=args.config)
         calib = loader.calib
         base_out = os.path.join("outputs", "online", "stereo_results")
@@ -60,6 +64,7 @@ def main():
 
     elif args.dataset == "vo":
         from vo_data_loader import KITTI_VOLoader as Loader
+
         vo_cfg = cfg["data_vo"]
         loader = Loader(
             sequence=vo_cfg["sequence"],
@@ -73,6 +78,7 @@ def main():
 
     else:
         from cb_data_loader import CheckerBoardLoader as Loader
+
         loader = Loader(base_dir="data_cb")
         calib = loader.calib
         base_out = os.path.join("outputs", "online", "cb_results")
@@ -163,37 +169,61 @@ def main():
         )
 
         # accumulate
-        all_results.append({
-            "frame": idx,
-            "abs_tx": t_filt[0, 0],
-            "abs_ty": t_filt[1, 0],
-            "abs_tz": t_filt[2, 0],
-            "gt_abs_tx": gt_t_abs[0, 0],
-            "gt_abs_ty": gt_t_abs[1, 0],
-            "gt_abs_tz": gt_t_abs[2, 0],
-            "abs_trans_err": abs_trans_err,
-            "abs_rot_err_deg": abs_rot_err,
-            "rel_tx": est_trel[0, 0],
-            "rel_ty": est_trel[1, 0],
-            "rel_tz": est_trel[2, 0],
-            "gt_rel_tx": gt_trel[0, 0],
-            "gt_rel_ty": gt_trel[1, 0],
-            "gt_rel_tz": gt_trel[2, 0],
-            "rel_trans_err": rel_trans_err,
-            "rel_rot_err_deg": rel_rot_err,
-        })
+        all_results.append(
+            {
+                "frame": idx,
+                "abs_tx": t_filt[0, 0],
+                "abs_ty": t_filt[1, 0],
+                "abs_tz": t_filt[2, 0],
+                "gt_abs_tx": gt_t_abs[0, 0],
+                "gt_abs_ty": gt_t_abs[1, 0],
+                "gt_abs_tz": gt_t_abs[2, 0],
+                "abs_trans_err": abs_trans_err,
+                "abs_rot_err_deg": abs_rot_err,
+                "rel_tx": est_trel[0, 0],
+                "rel_ty": est_trel[1, 0],
+                "rel_tz": est_trel[2, 0],
+                "gt_rel_tx": gt_trel[0, 0],
+                "gt_rel_ty": gt_trel[1, 0],
+                "gt_rel_tz": gt_trel[2, 0],
+                "rel_trans_err": rel_trans_err,
+                "rel_rot_err_deg": rel_rot_err,
+            }
+        )
 
         # draw + display
         inlier_matches = [m for i, m in enumerate(matches) if mask[i]]
         vis = cv2.drawMatches(
-            img0, kp0, img1, kp1, inlier_matches, None,
+            img0,
+            kp0,
+            img1,
+            kp1,
+            inlier_matches,
+            None,
             flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
         )
-        cv2.putText(vis, f"abs_err={abs_trans_err:.2f}m rot={abs_rot_err:.1f}°", (10, 25),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-        cv2.putText(vis, f"rel_err={rel_trans_err:.2f}m rot={rel_rot_err:.1f}°", (10, 45),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-        cv2.imshow("Matches", cv2.resize(vis, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA))
+        cv2.putText(
+            vis,
+            f"abs_err={abs_trans_err:.2f}m rot={abs_rot_err:.1f}°",
+            (10, 25),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 0),
+            1,
+        )
+        cv2.putText(
+            vis,
+            f"rel_err={rel_trans_err:.2f}m rot={rel_rot_err:.1f}°",
+            (10, 45),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 0),
+            1,
+        )
+        cv2.imshow(
+            "Matches",
+            cv2.resize(vis, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA),
+        )
         if cv2.waitKey(int(args.delay * 1000)) & 0xFF == ord("q"):
             break
 

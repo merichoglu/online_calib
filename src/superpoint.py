@@ -2,6 +2,7 @@ import torch
 import cv2
 import numpy as np
 
+
 class SuperPointFrontend:
     def __init__(self, model, device="cuda"):
         self.model = model.eval().to(device)
@@ -26,9 +27,9 @@ class SuperPointFrontend:
         #   pred['descriptors']:list of length B, each is Tensor[D,N]
 
         # Extract for batch=0
-        kpts = pred['keypoints'][0].cpu().numpy()       # shape [N, 2]
-        scores = pred['scores'][0].cpu().numpy()        # shape [N]
+        kpts = pred["keypoints"][0].cpu().numpy()  # shape [N, 2]
+        scores = pred["scores"][0].cpu().numpy()  # shape [N]
         # descriptors come as [D, N]; transpose to [N, D]
-        descs = pred['descriptors'][0].cpu().numpy().T  # shape [N, D]
+        descs = pred["descriptors"][0].cpu().numpy().T  # shape [N, D]
 
         return kpts, descs, scores

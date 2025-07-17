@@ -75,8 +75,10 @@ class PoseEstimator:
         E8, mask8 = cv2.findEssentialMat(
             pts0,
             pts1,
-            calib["K0"], None,
-            calib["K0"], None,
+            calib["K0"],
+            None,
+            calib["K0"],
+            None,
             method=cv2.RANSAC,
             prob=self.prob,
             threshold=self.thresh,
