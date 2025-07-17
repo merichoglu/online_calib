@@ -13,19 +13,22 @@ data_vo:
 
 # feature params
 feature:
-  type: ORB            # ORB | SIFT | SuperPoint
+  type: SuperPoint            # ORB | SIFT | SuperPoint
   n_features: 2000
   superpoint:
-    weights_path: models/superpoint_v1.pth
+    # weights_path removed—official code loads its own built-in superpoint_v1.pth
     device: cuda
 
 # matcher params
 matcher:
-  type: BF             # BF | SuperGlue
+  type: SuperGlue             # BF | SuperGlue
   ratio_test: 0.75
   max_row_diff: 2
   superglue:
-    weights_path: models/superglue_outdoor.pth
+    # choose 'indoor' or 'outdoor' (we copied your outdoor model into weights/)
+    weights: outdoor
+    sinkhorn_iterations: 20
+    match_threshold: 0.2
     device: cuda
 
 # RANSAC / pose

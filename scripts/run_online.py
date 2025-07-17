@@ -156,9 +156,17 @@ def main():
 
         # 2) matching
         if M.type == "SuperGlue":
-            matches = M.match(kp0, kp1, des0, des1, image_shape=(h, w))
+            matches = M.match(
+                kp0,
+                kp1,
+                des0,
+                des1,
+                scores0,
+                scores1,
+                image_shape=(h, w),
+            )
         else:
-            matches = M.match(kp0, kp1, des0, des1)
+            matches = M.match(kp0, kp1, des0, des1, scores0, scores1)
 
         # 3) grid-based filtering
         matches = collector.collect(kp0, kp1, matches)

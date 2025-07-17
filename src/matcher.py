@@ -35,12 +35,21 @@ class Matcher:
         else:
             raise ValueError(f"Unknown matcher type {tp}")
 
-    def match(self, kp0, kp1, des0, des1, image_shape=None):
+    def match(
+        self,
+        kp0,
+        kp1,
+        des0,
+        des1,
+        scores0=None,
+        scores1=None,
+        image_shape=None,
+    ):
         """
         kp0, kp1: lists of cv2.KeyPoint
         des0, des1: descriptor arrays (shape [N, D])
+        scores0, scores1: 1D arrays of SuperPoint scores
         image_shape: (H, W) tuple needed for SuperGlue
-
         returns: list of cv2.DMatch objects
         """
         if self.type == "SuperGlue":
@@ -58,6 +67,8 @@ class Matcher:
                 "keypoints1": torch.from_numpy(pts1).unsqueeze(0).to(self.device),
                 "descriptors0": torch.from_numpy(d0).unsqueeze(0).to(self.device),
                 "descriptors1": torch.from_numpy(d1).unsqueeze(0).to(self.device),
+                "scores0": torch.from_numpy(scores0).unsqueeze(0).to(self.device),
+                "scores1": torch.from_numpy(scores1).unsqueeze(0).to(self.device),
                 "image0": torch.empty((1, 1, *image_shape)).to(self.device),
                 "image1": torch.empty((1, 1, *image_shape)).to(self.device),
             }
