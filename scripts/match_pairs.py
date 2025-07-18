@@ -20,7 +20,7 @@ from src.matcher import Matcher
 
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Fisheye undistort + ORB matching in stitching mode"
+        description="Fisheye undistort + ORB/SIFT/SuperPoint matching in stitching mode"
     )
     p.add_argument(
         "--img_dir",
@@ -72,6 +72,7 @@ def load_intrinsics(config_path):
 
 def main():
     args = parse_args()
+    # make base output dir
     os.makedirs(args.output_dir, exist_ok=True)
 
     # load intrinsics
@@ -102,8 +103,15 @@ def main():
     # init extractor + stitching matcher
     extractor = FeatureExtractor(config_path=args.config)
     matcher = Matcher(config_path=args.config, stitching=True)
-    # optionally override ratio from config:
-    # matcher.ratio = 0.9
+
+    # decide feature-specific subfolder
+    ft = extractor.type.lower()
+    if ft == "superpoint":
+        sub = "sp"
+    else:
+        sub = ft  # "orb" or "sift"
+    out_subdir = os.path.join(args.output_dir, sub)
+    os.makedirs(out_subdir, exist_ok=True)
 
     # define camera order and indices
     cams = ["left", "front", "right", "rear"]
@@ -134,15 +142,15 @@ def main():
             u0 = cv2.remap(im0, map1, map2, interpolation=cv2.INTER_LINEAR)
             u1 = cv2.remap(im1, map1, map2, interpolation=cv2.INTER_LINEAR)
 
-            # detect & compute
-            kp0, des0 = extractor.detect_and_compute(u0)
-            kp1, des1 = extractor.detect_and_compute(u1)
-            if des0 is None or des1 is None:
+            # detect & compute (kp, des, scores)
+            kp0, des0, sc0 = extractor.detect_and_compute(u0)
+            kp1, des1, sc1 = extractor.detect_and_compute(u1)
+            if des0 is None or des1 is None or len(des0) == 0 or len(des1) == 0:
                 print(f"  → no descriptors at frame {idx}")
                 continue
 
             # match in stitching mode
-            matches = matcher.match(kp0, kp1, des0, des1)
+            matches = matcher.match(kp0, kp1, des0, des1, sc0, sc1, u0.shape)
             if not matches:
                 print(f"  → no matches at frame {idx}")
                 continue
@@ -158,7 +166,10 @@ def main():
                 None,
                 flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
             )
-            outp = os.path.join(args.output_dir, f"match_{c0}_{c1}_{idx}.png")
+
+            # save under e.g. cb_matches/orb/orb_match_left_front_1.png
+            filename = f"{sub}_match_{c0}_{c1}_{idx}.png"
+            outp = os.path.join(out_subdir, filename)
             cv2.imwrite(outp, vis)
 
     print("Done.")
