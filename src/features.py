@@ -4,7 +4,7 @@ import cv2
 import yaml
 import numpy as np
 
-from superpoint import SuperPointFrontend
+from src.superpoint import SuperPointFrontend
 from models.superpoint import SuperPoint as SPModel
 
 

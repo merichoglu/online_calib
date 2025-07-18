@@ -4,7 +4,7 @@ import yaml
 import numpy as np
 import torch
 
-from superglue import SuperGlueMatcher
+from src.superglue import SuperGlueMatcher
 from models.superglue import SuperGlue as SGModel
 
 
