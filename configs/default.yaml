@@ -22,8 +22,8 @@ feature:
 # matcher params
 matcher:
   type: SuperGlue             # BF | SuperGlue
-  ratio_test: 0.75
-  max_row_diff: 2
+  ratio_test: 0.9
+  max_row_diff: 20
   superglue:
     weights: outdoor
     sinkhorn_iterations: 20
