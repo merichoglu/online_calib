@@ -33,7 +33,7 @@ matcher:
 # RANSAC / pose
 ransac:
   prob: 0.999
-  thresh: 0.75
+  thresh: 2.0
 
 # smoothing for EKF
 smoothing:
