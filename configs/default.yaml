@@ -14,9 +14,9 @@ data_vo:
 # feature params
 feature:
   type: SuperPoint            # ORB | SIFT | SuperPoint
-  n_features: 2000
+  n_features: 1000
   superpoint:
-    keypoint_threshold: 0.2
+    keypoint_threshold: 0.05
     device: cuda
 
 # matcher params
@@ -26,7 +26,7 @@ matcher:
   max_row_diff: 20
   superglue:
     weights: outdoor
-    sinkhorn_iterations: 20
+    sinkhorn_iterations: 50
     match_threshold: 0.75
     device: cuda
 
