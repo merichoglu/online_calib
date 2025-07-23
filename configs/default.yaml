@@ -27,7 +27,7 @@ matcher:
   superglue:
     weights: outdoor
     sinkhorn_iterations: 20
-    match_threshold: 0.4
+    match_threshold: 0.75
     device: cuda
 
 # RANSAC / pose
