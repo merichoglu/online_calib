@@ -16,7 +16,7 @@ feature:
   type: SuperPoint            # ORB | SIFT | SuperPoint
   n_features: 2000
   superpoint:
-    # weights_path removed—official code loads its own built-in superpoint_v1.pth
+    keypoint_threshold: 0.2
     device: cuda
 
 # matcher params

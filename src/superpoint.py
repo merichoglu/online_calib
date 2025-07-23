@@ -4,9 +4,10 @@ import numpy as np
 
 
 class SuperPointFrontend:
-    def __init__(self, model, device="cuda"):
+    def __init__(self, model, device="cuda", keypoint_threshold=0.05):
         self.model = model.eval().to(device)
         self.device = device
+        self.threshold = float(keypoint_threshold)
 
     def run(self, image):
         # Convert to grayscale if needed
@@ -31,5 +32,5 @@ class SuperPointFrontend:
         scores = pred["scores"][0].cpu().numpy()  # shape [N]
         # descriptors come as [D, N]; transpose to [N, D]
         descs = pred["descriptors"][0].cpu().numpy().T  # shape [N, D]
-
-        return kpts, descs, scores
+        keep = scores >= self.threshold
+        return kpts[keep], descs[keep], scores[keep]
