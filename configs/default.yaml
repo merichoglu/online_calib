@@ -1,0 +1,60 @@
+# configs/default.yaml
+
+# data paths
+data_stereo:
+  raw_dir: ../data_stereo/raw
+  proc_dir: ../data_stereo/processed
+
+data_vo:
+  base_dir: data_vo/dataset
+  calib_dir: data_vo/dataset
+  sequence: '01'
+  cam: 0
+
+# feature params
+feature:
+  type: SuperPoint            # ORB | SIFT | SuperPoint
+  n_features: 2000
+  superpoint:
+    # weights_path removed—official code loads its own built-in superpoint_v1.pth
+    device: cuda
+
+# matcher params
+matcher:
+  type: SuperGlue             # BF | SuperGlue
+  ratio_test: 0.9
+  max_row_diff: 20
+  superglue:
+    weights: outdoor
+    sinkhorn_iterations: 20
+    match_threshold: 0.4
+    device: cuda
+
+# RANSAC / pose
+ransac:
+  prob: 0.999
+  thresh: 0.75
+
+# smoothing for EKF
+smoothing:
+  alpha: 0.10
+  rot_thresh_deg: 5.0
+  warmup_frames: 15
+
+# grid-based match collection
+collection:
+  grid_rows:    8
+  grid_cols:   16
+  max_per_cell: 200
+
+gnc:
+  max_iters: 20
+
+# fisheye camera intrinsics for checkerboard undistortion/matching
+intrinsics:
+  K: [[550.0395,   0.0,   960.0],
+      [  0.0, 533.372225, 768.0],
+      [  0.0,    0.0,     1.0]]
+  D: [0.0, 0.0, 0.0, 0.0]
+  height: 1536
+  width: 1920

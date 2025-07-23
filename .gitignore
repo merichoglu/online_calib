@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*$py.class
+data_vo/
+data_stereo/
+data_cb/
+venv/
+models/*.pth
+__pycache__/*.pyc
+__pycache__/
+models/superglue_author/
+outputs/
+scripts/bev
+bin/
