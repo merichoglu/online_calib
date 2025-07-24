@@ -9,6 +9,7 @@ models/*.pth
 __pycache__/*.pyc
 __pycache__/
 models/superglue_author/
-outputs/
+outputs/bev_calib
+outputs/cb_matches
 scripts/bev
 bin/
