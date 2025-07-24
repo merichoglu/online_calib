@@ -24,7 +24,9 @@ class FeatureExtractor:
             model = SPModel(sp_cfg)
             device = sp_cfg.get("device", "cuda")
             thresh = sp_cfg.get("keypoint_threshold", 0.05)
-            self.det = SuperPointFrontend(model, device=device, keypoint_threshold=thresh)
+            self.det = SuperPointFrontend(
+                model, device=device, keypoint_threshold=thresh
+            )
         else:
             raise ValueError(f"Unknown feature type {tp}")
 

@@ -14,9 +14,9 @@ data_vo:
 # feature params
 feature:
   type: SuperPoint            # ORB | SIFT | SuperPoint
-  n_features: 5000
+  n_features: 1000
   superpoint:
-    keypoint_threshold: 0.05
+    keypoint_threshold: 0.005
     device: cuda
 
 # matcher params
@@ -27,7 +27,7 @@ matcher:
   superglue:
     weights: outdoor
     sinkhorn_iterations: 50
-    match_threshold: 0.75
+    match_threshold: 0.5
     device: cuda
 
 # RANSAC / pose
@@ -55,6 +55,6 @@ intrinsics:
   K: [[550.0395,   0.0,   960.0],
       [  0.0, 533.372225, 768.0],
       [  0.0,    0.0,     1.0]]
-  D: [0.0, 0.0, 0.0, 0.0]
+  D: [0.0017168675275541325,0.0080394521025418,-0.006041718283931211,0.001409880154695331]
   height: 1536
   width: 1920
