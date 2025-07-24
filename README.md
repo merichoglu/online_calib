@@ -68,7 +68,7 @@ The filtered extrinsic estimates and evaluation CSV will be written under `outpu
 
 ## Quantitative Results (KITTI Stereo Training)
 
-### 📌 ORB
+### ORB
 
 | Metric                  | Mean ± Std    |
 | ----------------------- | ------------- |
@@ -77,7 +77,7 @@ The filtered extrinsic estimates and evaluation CSV will be written under `outpu
 | Rel. Translation Error  | 0.046 ± 0.087 |
 | Rel. Rotation Error (°) | 0.55 ± 1.87   |
 
-### 📌 SIFT
+### SIFT
 
 | Metric                  | Mean ± Std    |
 | ----------------------- | ------------- |
@@ -86,7 +86,7 @@ The filtered extrinsic estimates and evaluation CSV will be written under `outpu
 | Rel. Translation Error  | 0.044 ± 0.071 |
 | Rel. Rotation Error (°) | 0.45 ± 0.92   |
 
-### 📌 SuperPoint + SuperGlue
+### SuperPoint + SuperGlue
 
 | Metric                  | Mean ± Std    |
 | ----------------------- | ------------- |
@@ -95,7 +95,7 @@ The filtered extrinsic estimates and evaluation CSV will be written under `outpu
 | Rel. Translation Error  | 0.034 ± 0.075 |
 | Rel. Rotation Error (°) | 0.36 ± 0.69   |
 
-### 🔍 Overall Comparison Table
+### Overall Comparison Table
 
 | Method                   | Abs Trans Err (↓) | Abs Rot Err (deg ↓) | Rel Trans Err (↓) | Rel Rot Err (deg ↓) |
 | ------------------------ | ----------------- | ------------------- | ----------------- | ------------------- |
