@@ -14,9 +14,9 @@ data_vo:
 # feature params
 feature:
   type: SuperPoint            # ORB | SIFT | SuperPoint
-  n_features: 10000
+  n_features: 1000
   superpoint:
-    keypoint_threshold: 0.1
+    keypoint_threshold: 0.05
     device: cuda
 
 # matcher params
