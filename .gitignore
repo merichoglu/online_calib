@@ -13,3 +13,4 @@ outputs/bev_calib
 outputs/cb_matches
 scripts/bev
 bin/
+.python-version
